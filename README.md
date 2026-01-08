@@ -1,2 +1,2 @@
 # desidiet
-simple diet tracker that logs food 
+Indian meal diet tracker with AI-based nutrition estimation
