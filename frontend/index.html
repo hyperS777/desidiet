@@ -11,20 +11,34 @@
 
   <div>
     <h2>Add Meal</h2>
-    <input id="foodInput" placeholder="Enter food name" />
-    <button>Add</button>
+    <input id="foodInput" placeholder="Enter food name (e.g. roti)" />
+    <br><br>
+    <button onclick="addMeal()">Add from List</button>
+    <button onclick="useAI()">Estimate with AI</button>
   </div>
+
   <div>
-  <h3>Or enter nutrition manually</h3>
+    <h3>Or enter nutrition manually</h3>
 
-  <input id="mCalories" type="number" placeholder="Calories">
-  <input id="mProtein" type="number" placeholder="Protein (g)">
-  <input id="mCarbs" type="number" placeholder="Carbs (g)">
-  <input id="mFat" type="number" placeholder="Fat (g)">
+    <input id="mCalories" type="number" placeholder="Calories">
+    <br>
+    <input id="mProtein" type="number" placeholder="Protein (g)">
+    <br>
+    <input id="mCarbs" type="number" placeholder="Carbs (g)">
+    <br>
+    <input id="mFat" type="number" placeholder="Fat (g)">
+    <br><br>
 
-  <button onclick="addManualMeal()">Add Manual Meal</button>
-</div>
+    <button onclick="addManualMeal()">Add Manual Meal</button>
+  </div>
 
+  <div>
+    <h2>Today's Total</h2>
+    <p>Calories: <span id="tCalories">0</span></p>
+    <p>Protein: <span id="tProtein">0</span></p>
+    <p>Carbs: <span id="tCarbs">0</span></p>
+    <p>Fat: <span id="tFat">0</span></p>
+  </div>
 
   <script src="script.js"></script>
 </body>
