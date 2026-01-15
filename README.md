@@ -35,16 +35,18 @@ Simple and beginner friendly interface
 ### Optional AI Feature
 To enable AI-based nutrition estimation:
 1. Set up the backend from the `backend` folder.
-2. Add your API key locally.
-3. Run:
+2. Install required packages by using this command from backend folder: python -m pip install fastapi uvicorn openai python-dotenv
+3. Add your API key locally.
+4. Run:
    cd backend
    python -m uvicorn server:app --reload
+5. Open `frontend/index.html` in your browser.
 
 DesiDiet AI includes AI-based nutrition estimation as an optional enhancement.
 The core application works fully without AI
-AI is used only when:
-   An API key is available
-   Quota/credits are available
+Note: AI is used only when:
+         An API key is available
+         Quota/credits are available
    
 If AI is unavailable, the app falls back to:
    Manual nutrition entry
