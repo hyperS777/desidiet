@@ -23,4 +23,8 @@ def get_nutrition(food: Food):
         data = json.loads(text)
         return data
     except Exception:
-        return {"error": "AI not enabled. Use manual entry instead."}
+        return {
+            "error": "AI service unavailable (quota or key issue). Please use manual entry or food list."
+        }
+
+
