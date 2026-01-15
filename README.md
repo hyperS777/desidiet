@@ -13,7 +13,7 @@ Built-in nutrition data for common Indian meals.
 Manual nutrition entry for any custom food.
 Optional AI nutrition estimation for unknown foods.  
 
-The app works fully without AI, making it easy for anyone to run and evaluate.
+The app also works without AI, making it easy for anyone to run and evaluate.
 
 ## Features
 Add meals from Indian food list  
