@@ -4,7 +4,6 @@ from openai import OpenAI
 def estimate_nutrition(food: str):
     api_key = os.getenv("OPENAI_API_KEY")
 
-    # If no API key, stop gracefully
     if not api_key:
         raise Exception("AI not enabled")
 

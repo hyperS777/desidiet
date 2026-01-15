@@ -5,7 +5,6 @@ from pydantic import BaseModel
 import json
 from ai import estimate_nutrition
 
-print("API KEY SEEN BY FASTAPI:", os.getenv("OPENAI_API_KEY"))
 
 app = FastAPI()
 
