@@ -7,7 +7,7 @@ It helps users understand their daily calorie and nutrition intake in a simple a
 Most diet tracking apps focus on Western food and make it difficult to track common Indian meals such as roti, dal, curry, etc. Users often guess nutrition values or stop tracking completely. Most app also ask you to pay before being able to use the app.
 
 ## Solution
-DesiDiet AI provides an easy-to-use tracker that supports:
+DesiDiet AI provides an easy to use tracker that supports:
 
 Built-in nutrition data for common Indian meals.  
 Manual nutrition entry for any custom food.
@@ -37,8 +37,23 @@ To enable AI-based nutrition estimation:
 1. Set up the backend from the `backend` folder.
 2. Add your API key locally.
 3. Run:
-   ```bash
-   uvicorn main:app --reload
+   cd backend
+   python -m uvicorn server:app --reload
+
+DesiDiet AI includes AI-based nutrition estimation as an optional enhancement.
+The core application works fully without AI
+AI is used only when:
+   An API key is available
+   Quota/credits are available
+   
+If AI is unavailable, the app falls back to:
+   Manual nutrition entry
+   Built-in food data
+   
+This ensures:
+   Easy evaluation for judges
+   No forced setup
+   Secure handling of API keys
    
 ### Future Improvements
 Mobile friendly app design.
