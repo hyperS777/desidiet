@@ -63,21 +63,66 @@ const foodData = {
   milkshake: { calories:450, protein:10, carbs:55, fat:22 },
   ice_cream: { calories:250, protein:4,  carbs:30, fat:14 }
 };
+
 let totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
 let history = [];
-let stats = { Breakfast: 0, Lunch: 0, Dinner: 0, Snack: 0 };
+let dailyGoal = null;
+let activeFilter = "All";
+
+let stats = {
+  Breakfast: { calories: 0, protein: 0 },
+  Lunch: { calories: 0, protein: 0 },
+  Dinner: { calories: 0, protein: 0 },
+  Snack: { calories: 0, protein: 0 }
+};
 
 function addMeal() {
-  const name = foodInput.value.toLowerCase().replace(/\s+/g, "_");
+  const key = foodInput.value.toLowerCase().replace(/\s+/g, "_");
   const mealType = mealTypeFood.value;
+  const note = noteFood.value;
 
-  if (!foodData[name]) {
-    alert("Food not found");
-    return;
+  if (!foodData[key]) return alert("Food not found");
+
+  const f = foodData[key];
+  updateAll(key, f.calories, f.protein, f.carbs, f.fat, mealType, "food list", note);
+  foodInput.value = "";
+}
+
+async function estimateWithAI() {
+  const food = foodInput.value.trim();
+  const mealType = mealTypeFood.value;
+  const note = noteFood.value;
+
+  if (!food) return alert("Enter food name");
+
+  try {
+    const res = await fetch("http://127.0.0.1:8000/ai/nutrition", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: food })
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+      alert("AI unavailable. Use manual entry.");
+      return;
+    }
+
+    updateAll(
+      food,
+      data.calories,
+      data.protein,
+      data.carbs,
+      data.fat,
+      mealType,
+      "AI",
+      note
+    );
+
+  } catch {
+    alert("Could not connect to AI backend");
   }
-
-  const meal = foodData[name];
-  updateAll(name, meal.calories, meal.protein, meal.carbs, meal.fat, mealType, "food list");
 }
 
 function addManualMeal() {
@@ -86,81 +131,46 @@ function addManualMeal() {
   const cb = Number(mCarbs.value);
   const f = Number(mFat.value);
   const mealType = mealTypeManual.value;
+  const note = noteManual.value;
 
-  if (!c || !p || !cb || !f) {
-    alert("Fill all fields");
-    return;
-  }
+  if (!c || !p || !cb || !f) return alert("Fill all fields");
 
-  updateAll("Manual entry", c, p, cb, f, mealType, "manual");
+  updateAll("Manual entry", c, p, cb, f, mealType, "manual", note);
 }
 
-function updateAll(name, c, p, cb, f, mealType, source) {
+function updateAll(name, c, p, cb, f, mealType, source, note) {
   totals.calories += c;
   totals.protein += p;
   totals.carbs += cb;
   totals.fat += f;
 
-  stats[mealType] += c;
+  stats[mealType].calories += c;
+  stats[mealType].protein += p;
 
   const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  history.push({ name, c, mealType, source, time });
 
+  history.push({ name, c, mealType, source, time, note });
   render();
   save();
 }
 
-function render() {
-  tCalories.innerText = totals.calories;
-  tProtein.innerText = totals.protein;
-  tCarbs.innerText = totals.carbs;
-  tFat.innerText = totals.fat;
+function showSuggestions() {
+  const input = foodInput.value.toLowerCase();
+  suggestionsBox.innerHTML = "";
+  if (!input) return;
 
-  sBreakfast.innerText = stats.Breakfast;
-  sLunch.innerText = stats.Lunch;
-  sDinner.innerText = stats.Dinner;
-  sSnack.innerText = stats.Snack;
-
-  historyList.innerHTML = "";
-  history.forEach(h => {
-    const li = document.createElement("li");
-    li.innerText = `${h.time} - [${h.mealType}] ${h.name.replace(/_/g," ")} - ${h.c} kcal (${h.source})`;
-    historyList.appendChild(li);
-  });
+  Object.keys(foodData)
+    .map(f => f.replace(/_/g, " "))
+    .filter(f => f.startsWith(input))
+    .slice(0, 6)
+    .forEach(f => {
+      const div = document.createElement("div");
+      div.innerText = f;
+      div.onclick = () => {
+        foodInput.value = f;
+        suggestionsBox.innerHTML = "";
+      };
+      suggestionsBox.appendChild(div);
+    });
 }
 
-function clearHistory() {
-  totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
-  history = [];
-  stats = { Breakfast: 0, Lunch: 0, Dinner: 0, Snack: 0 };
-  save();
-  render();
-}
-
-function exportHistory() {
-  let csv = "Time,Meal,Calories,Type,Source\n";
-  history.forEach(h => {
-    csv += `${h.time},${h.name},${h.c},${h.mealType},${h.source}\n`;
-  });
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "desidiet.csv";
-  a.click();
-}
-
-function save() {
-  localStorage.setItem("totals", JSON.stringify(totals));
-  localStorage.setItem("history", JSON.stringify(history));
-  localStorage.setItem("stats", JSON.stringify(stats));
-}
-
-function load() {
-  totals = JSON.parse(localStorage.getItem("totals")) || totals;
-  history = JSON.parse(localStorage.getItem("history")) || [];
-  stats = JSON.parse(localStorage.getItem("stats")) || stats;
-  render();
-}
-
-window.onload = load;
