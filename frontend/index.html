@@ -6,44 +6,73 @@
 </head>
 <body>
 
-  <h1>DesiDiet AI</h1>
-  <p>Indian Meal Diet Tracker</p>
+  <h1 style="font-size: 40px; margin-bottom: 0px;">DesiDiet AI</h1>
+  <p style ="font-size: 20px; margin-top: 0px; margin-bottom: 0px;">  Indian Meal Diet Tracker</p>
+  <p style="margin-top: 10px; font-size: 16px;">Track you everyday meals</p>
 
-  <div>
-    <h2>Add Meal</h2>
-    <input id="foodInput" placeholder="Enter food name (e.g. roti)" />
-    <br><br>
-    <button onclick="addMeal()">Add from List</button>
-    <button onclick="useAI()">Estimate with AI</button>
+  <div class="container">
+
+    <!-- ADD MEAL -->
+    <div class="card">
+      <h2>Add Meal</h2>
+
+      <input id="foodInput" placeholder="Enter food name">
+
+      <select id="mealTypeFood">
+        <option>Breakfast</option>
+        <option>Lunch</option>
+        <option>Dinner</option>
+        <option>Snack</option>
+      </select>
+
+      <button onclick="addMeal()">Add</button>
+      <button onclick="useAI()">Estimate with AI</button>
+    </div>
+
+    <!-- MANUAL ENTRY -->
+    <div class="card">
+      <h2>Manual Entry</h2>
+
+      <div class="grid">
+        <input id="mCalories" type="number" placeholder="Calories">
+        <input id="mProtein" type="number" placeholder="Protein (g)">
+        <input id="mCarbs" type="number" placeholder="Carbs (g)">
+        <input id="mFat" type="number" placeholder="Fat (g)">
+      </div>
+
+      <select id="mealTypeManual">
+        <option>Breakfast</option>
+        <option>Lunch</option>
+        <option>Dinner</option>
+        <option>Snack</option>
+      </select>
+
+      <button onclick="addManualMeal()">Add Manual Meal</button>
+    </div>
+
+    <!-- TOTALS + HISTORY -->
+    <div class="card">
+      <h2>Today's Total</h2>
+
+      <p>Calories: <span id="tCalories">0</span></p>
+      <p>Protein: <span id="tProtein">0</span></p>
+      <p>Carbs: <span id="tCarbs">0</span></p>
+      <p>Fat: <span id="tFat">0</span></p>
+
+      <h3>Meal Stats</h3>
+      <p>Breakfast: <span id="sBreakfast">0</span></p>
+      <p>Lunch: <span id="sLunch">0</span></p>
+      <p>Dinner: <span id="sDinner">0</span></p>
+      <p>Snack: <span id="sSnack">0</span></p>
+
+      <h3>Meal History</h3>
+      <ul id="historyList"></ul>
+
+      <button onclick="clearHistory()">Clear History</button>
+      <button onclick="exportHistory()">Export to CSV</button>
+    </div>
+
   </div>
-
-  <div>
-    <h3>Or enter nutrition manually</h3>
-
-    <input id="mCalories" type="number" placeholder="Calories">
-    <br>
-    <input id="mProtein" type="number" placeholder="Protein (g)">
-    <br>
-    <input id="mCarbs" type="number" placeholder="Carbs (g)">
-    <br>
-    <input id="mFat" type="number" placeholder="Fat (g)">
-    <br><br>
-
-    <button onclick="addManualMeal()">Add Manual Meal</button>
-  </div>
-
-  <div>
-    <h2>Today's Total</h2>
-    <p>Calories: <span id="tCalories">0</span></p>
-    <p>Protein: <span id="tProtein">0</span></p>
-    <p>Carbs: <span id="tCarbs">0</span></p>
-    <p>Fat: <span id="tFat">0</span></p>
-  </div>
-  <div>
-  <h2>Meal History</h2>
-  <ul id="historyList"></ul>
-  </div>
-
 
   <script src="script.js"></script>
 </body>
