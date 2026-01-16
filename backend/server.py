@@ -1,38 +1,34 @@
-import os
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import os
 import json
-from ai import estimate_nutrition
-
+from openai import OpenAI
 
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 class Food(BaseModel):
     name: str
 
-@app.get("/")
-def root():
-    return {"status": "DesiDiet AI backend running"}
-
 @app.post("/ai/nutrition")
-def get_nutrition(food: Food):
+def ai_nutrition(food: Food):
+    prompt = f"""
+    Estimate nutrition for Indian food: {food.name}.
+    Respond ONLY in JSON:
+    {{
+      "calories": number,
+      "protein": number,
+      "carbs": number,
+      "fat": number
+    }}
+    """
+
     try:
-        text = estimate_nutrition(food.name)
-        data = json.loads(text)
-        return data
-    except Exception:
-        return {
-            "error": "AI service unavailable (quota or key issue). Please use manual entry or food list."
-        }
+        res = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return json.loads(res.choices[0].message.content)
 
-
+    except Exception as e:
+        return {"error": str(e)}
