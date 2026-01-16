@@ -64,6 +64,40 @@ const foodData = {
   ice_cream: { calories:250, protein:4,  carbs:30, fat:14 }
 };
 
+
+const foodInput = document.getElementById("foodInput");
+const suggestionsBox = document.getElementById("suggestionsBox");
+const mealTypeFood = document.getElementById("mealTypeFood");
+const noteFood = document.getElementById("noteFood");
+
+const mCalories = document.getElementById("mCalories");
+const mProtein = document.getElementById("mProtein");
+const mCarbs = document.getElementById("mCarbs");
+const mFat = document.getElementById("mFat");
+const mealTypeManual = document.getElementById("mealTypeManual");
+const noteManual = document.getElementById("noteManual");
+
+const goalInput = document.getElementById("goalInput");
+const goalText = document.getElementById("goalText");
+const progressFill = document.getElementById("progressFill");
+
+const tCalories = document.getElementById("tCalories");
+const tProtein = document.getElementById("tProtein");
+const tCarbs = document.getElementById("tCarbs");
+const tFat = document.getElementById("tFat");
+
+const sBreakfast = document.getElementById("sBreakfast");
+const sLunch = document.getElementById("sLunch");
+const sDinner = document.getElementById("sDinner");
+const sSnack = document.getElementById("sSnack");
+
+const pBreakfast = document.getElementById("pBreakfast");
+const pLunch = document.getElementById("pLunch");
+const pDinner = document.getElementById("pDinner");
+const pSnack = document.getElementById("pSnack");
+
+const historyList = document.getElementById("historyList");
+
 let totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
 let history = [];
 let dailyGoal = null;
@@ -81,48 +115,17 @@ function addMeal() {
   const mealType = mealTypeFood.value;
   const note = noteFood.value;
 
-  if (!foodData[key]) return alert("Food not found");
+  if (!foodData[key]) {
+    alert("Food not found in list");
+    return;
+  }
 
   const f = foodData[key];
   updateAll(key, f.calories, f.protein, f.carbs, f.fat, mealType, "food list", note);
+
   foodInput.value = "";
-}
-
-async function estimateWithAI() {
-  const food = foodInput.value.trim();
-  const mealType = mealTypeFood.value;
-  const note = noteFood.value;
-
-  if (!food) return alert("Enter food name");
-
-  try {
-    const res = await fetch("http://127.0.0.1:8000/ai/nutrition", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: food })
-    });
-
-    const data = await res.json();
-
-    if (data.error) {
-      alert("AI unavailable. Use manual entry.");
-      return;
-    }
-
-    updateAll(
-      food,
-      data.calories,
-      data.protein,
-      data.carbs,
-      data.fat,
-      mealType,
-      "AI",
-      note
-    );
-
-  } catch {
-    alert("Could not connect to AI backend");
-  }
+  noteFood.value = "";
+  suggestionsBox.innerHTML = "";
 }
 
 function addManualMeal() {
@@ -133,9 +136,18 @@ function addManualMeal() {
   const mealType = mealTypeManual.value;
   const note = noteManual.value;
 
-  if (!c || !p || !cb || !f) return alert("Fill all fields");
+  if (!c || !p || !cb || !f) {
+    alert("Fill all fields");
+    return;
+  }
 
   updateAll("Manual entry", c, p, cb, f, mealType, "manual", note);
+
+  mCalories.value = "";
+  mProtein.value = "";
+  mCarbs.value = "";
+  mFat.value = "";
+  noteManual.value = "";
 }
 
 function updateAll(name, c, p, cb, f, mealType, source, note) {
@@ -147,11 +159,102 @@ function updateAll(name, c, p, cb, f, mealType, source, note) {
   stats[mealType].calories += c;
   stats[mealType].protein += p;
 
-  const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const time = new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 
   history.push({ name, c, mealType, source, time, note });
+
   render();
   save();
+}
+
+function render() {
+  tCalories.innerText = totals.calories;
+  tProtein.innerText = totals.protein;
+  tCarbs.innerText = totals.carbs;
+  tFat.innerText = totals.fat;
+
+  sBreakfast.innerText = stats.Breakfast.calories;
+  sLunch.innerText = stats.Lunch.calories;
+  sDinner.innerText = stats.Dinner.calories;
+  sSnack.innerText = stats.Snack.calories;
+
+  pBreakfast.innerText = stats.Breakfast.protein;
+  pLunch.innerText = stats.Lunch.protein;
+  pDinner.innerText = stats.Dinner.protein;
+  pSnack.innerText = stats.Snack.protein;
+
+  historyList.innerHTML = "";
+
+  history
+    .filter(h => activeFilter === "All" || h.mealType === activeFilter)
+    .forEach(h => {
+      const li = document.createElement("li");
+      li.innerText =
+        `${h.time} - [${h.mealType}] ${h.name.replace(/_/g, " ")} - ${h.c} kcal` +
+        (h.note ? `, ${h.note}` : "");
+      historyList.appendChild(li);
+    });
+
+  updateGoalUI();
+}
+
+function setGoal() {
+  const val = Number(goalInput.value);
+  if (!val || val <= 0) {
+    alert("Enter valid calorie goal");
+    return;
+  }
+  dailyGoal = val;
+  save();
+  updateGoalUI();
+}
+
+function updateGoalUI() {
+  if (!dailyGoal) {
+    goalText.innerText = "No goal set";
+    progressFill.style.width = "0%";
+    return;
+  }
+  const percent = Math.min((totals.calories / dailyGoal) * 100, 100);
+  goalText.innerText = `${totals.calories} / ${dailyGoal} kcal`;
+  progressFill.style.width = percent + "%";
+}
+
+function filterHistory(type) {
+  activeFilter = type;
+  render();
+}
+
+function clearHistory() {
+  totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  history = [];
+  dailyGoal = null;
+
+  stats = {
+    Breakfast: { calories: 0, protein: 0 },
+    Lunch: { calories: 0, protein: 0 },
+    Dinner: { calories: 0, protein: 0 },
+    Snack: { calories: 0, protein: 0 }
+  };
+
+  save();
+  render();
+}
+
+function exportHistory() {
+  let csv = "Time,Meal,Calories,Type,Note\n";
+  history.forEach(h => {
+    csv += `${h.time},${h.name},${h.c},${h.mealType},${h.note || ""}\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "desidiet.csv";
+  a.click();
 }
 
 function showSuggestions() {
@@ -174,3 +277,19 @@ function showSuggestions() {
     });
 }
 
+function save() {
+  localStorage.setItem("totals", JSON.stringify(totals));
+  localStorage.setItem("history", JSON.stringify(history));
+  localStorage.setItem("stats", JSON.stringify(stats));
+  localStorage.setItem("goal", dailyGoal);
+}
+
+function load() {
+  totals = JSON.parse(localStorage.getItem("totals")) || totals;
+  history = JSON.parse(localStorage.getItem("history")) || [];
+  stats = JSON.parse(localStorage.getItem("stats")) || stats;
+  dailyGoal = Number(localStorage.getItem("goal")) || null;
+  render();
+}
+
+window.onload = load;
