@@ -1,6 +1,4 @@
-# DesiDiet - Team Code Breakers
-This Project was made for the Winter Works challenge by LOOP - The Developers Club in SoE, JNU.
-
+# DesiDiet
 DesiDiet AI is a lightweight diet tracking web application focused on Indian meals.  
 It helps users understand their daily calorie and nutrition intake in a simple and practical way.
 
