@@ -176,18 +176,29 @@ let stats = {
   Snack: { calories: 0, protein: 0 }
 };
 
+function showToast(message, type = "info") {
+  const container = document.getElementById("toast-container");
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => { toast.classList.add("hide"); }, 2500);
+  setTimeout(() => { toast.remove(); }, 2800);
+}
+
 function addMeal() {
   const key = foodInput.value.toLowerCase().replace(/\s+/g, "_");
   const mealType = mealTypeFood.value;
   const note = noteFood.value;
 
   if (!foodData[key]) {
-    alert("Food not found in list");
+    showToast("Food not found in list", "error");
     return;
   }
 
   const f = foodData[key];
   updateAll(key, f.calories, f.protein, f.carbs, f.fat, mealType, "food list", note);
+  showToast(`Added ${key.replace(/_/g, " ")} (${f.calories} kcal)`, "success");
 
   foodInput.value = "";
   noteFood.value = "";
@@ -203,11 +214,12 @@ function addManualMeal() {
   const note = noteManual.value;
 
   if (!c || !p || !cb || !f) {
-    alert("Fill all fields");
+    showToast("Fill all fields", "error");
     return;
   }
 
   updateAll("Manual entry", c, p, cb, f, mealType, "manual", note);
+  showToast(`Added manual meal (${c} kcal)`, "success");
 
   mCalories.value = "";
   mProtein.value = "";
@@ -242,6 +254,29 @@ function render() {
   tCarbs.innerText = totals.carbs;
   tFat.innerText = totals.fat;
 
+  // Header stats
+  const hCalories = document.getElementById("hCalories");
+  const hMeals = document.getElementById("hMeals");
+  if (hCalories) hCalories.innerText = totals.calories.toLocaleString();
+  if (hMeals) hMeals.innerText = history.length;
+
+  // Macro progress bars (relative to daily goal or reasonable defaults)
+  const goalCal = dailyGoal || 2000;
+  const goalPro = Math.round(goalCal * 0.075);  // ~150g for 2000
+  const goalCarb = Math.round(goalCal * 0.125);  // ~250g for 2000
+  const goalFat = Math.round(goalCal * 0.033);   // ~65g for 2000
+
+  const fillCal = document.getElementById("fillCal");
+  const fillPro = document.getElementById("fillPro");
+  const fillCarb = document.getElementById("fillCarb");
+  const fillFat = document.getElementById("fillFat");
+
+  if (fillCal) fillCal.style.width = Math.min((totals.calories / goalCal) * 100, 100) + "%";
+  if (fillPro) fillPro.style.width = Math.min((totals.protein / goalPro) * 100, 100) + "%";
+  if (fillCarb) fillCarb.style.width = Math.min((totals.carbs / goalCarb) * 100, 100) + "%";
+  if (fillFat) fillFat.style.width = Math.min((totals.fat / goalFat) * 100, 100) + "%";
+
+  // Meal breakdown
   sBreakfast.innerText = stats.Breakfast.calories;
   sLunch.innerText = stats.Lunch.calories;
   sDinner.innerText = stats.Dinner.calories;
@@ -252,17 +287,25 @@ function render() {
   pDinner.innerText = stats.Dinner.protein;
   pSnack.innerText = stats.Snack.protein;
 
+  // History list
   historyList.innerHTML = "";
 
-  history
-    .filter(h => activeFilter === "All" || h.mealType === activeFilter)
-    .forEach(h => {
-      const li = document.createElement("li");
-      li.innerText =
-        `${h.time} - [${h.mealType}] ${h.name.replace(/_/g, " ")} - ${h.c} kcal` +
-        (h.note ? `, ${h.note}` : "");
-      historyList.appendChild(li);
-    });
+  const filtered = history.filter(h => activeFilter === "All" || h.mealType === activeFilter);
+
+  filtered.forEach(h => {
+    const li = document.createElement("li");
+    li.className = `meal-${h.mealType.toLowerCase()}`;
+    li.innerText =
+      `${h.time} — [${h.mealType}] ${h.name.replace(/_/g, " ")} — ${h.c} kcal` +
+      (h.note ? ` · ${h.note}` : "");
+    historyList.appendChild(li);
+  });
+
+  // Empty state toggle
+  const emptyState = document.getElementById("emptyState");
+  if (emptyState) {
+    emptyState.style.display = filtered.length === 0 ? "block" : "none";
+  }
 
   updateGoalUI();
 }
@@ -270,12 +313,13 @@ function render() {
 function setGoal() {
   const val = Number(goalInput.value);
   if (!val || val <= 0) {
-    alert("Enter valid calorie goal");
+    showToast("Enter a valid calorie goal", "error");
     return;
   }
   dailyGoal = val;
   save();
   updateGoalUI();
+  showToast(`Goal set to ${val} kcal`, "success");
 }
 
 function updateGoalUI() {
@@ -289,8 +333,10 @@ function updateGoalUI() {
   progressFill.style.width = percent + "%";
 }
 
-function filterHistory(type) {
+function filterHistory(type, btn) {
   activeFilter = type;
+  document.querySelectorAll(".filters button").forEach(b => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
   render();
 }
 
@@ -356,6 +402,159 @@ function load() {
   stats = JSON.parse(localStorage.getItem("stats")) || stats;
   dailyGoal = Number(localStorage.getItem("goal")) || null;
   render();
+}
+
+// ─── AI Estimation (Free – No API Key Needed) ─────────────────────
+async function estimateWithAI() {
+  const raw = foodInput.value.trim();
+  if (!raw) {
+    showToast("Enter a food name first", "error");
+    return;
+  }
+
+  const mealType = mealTypeFood.value;
+  const note = noteFood.value;
+
+  // 1️⃣  Try local fuzzy match first (instant, offline)
+  const localResult = fuzzyMatchFood(raw);
+  if (localResult) {
+    const f = foodData[localResult];
+    updateAll(raw, f.calories, f.protein, f.carbs, f.fat, mealType, "AI (local match)", note);
+    showToast(`AI matched "${raw}" → ${localResult.replace(/_/g, " ")} (${f.calories} kcal)`, "success");
+    foodInput.value = "";
+    noteFood.value = "";
+    suggestionsBox.innerHTML = "";
+    return;
+  }
+
+  // 2️⃣  Call free Hugging Face Inference API
+  showToast("🤖 AI is thinking…", "info");
+
+  const prompt = `Estimate nutrition for one average serving of this Indian food. Return ONLY valid JSON with keys: calories, protein, carbs, fat (all numbers, no units). Food: "${raw}"`;
+
+  try {
+    const data = await callFreeAI(prompt);
+    if (data && data.calories) {
+      updateAll(raw, data.calories, data.protein, data.carbs, data.fat, mealType, "AI estimate", note);
+      showToast(`AI estimated "${raw}" (${data.calories} kcal)`, "success");
+      foodInput.value = "";
+      noteFood.value = "";
+      suggestionsBox.innerHTML = "";
+    } else {
+      showToast("AI couldn't estimate. Try a different name.", "error");
+    }
+  } catch (err) {
+    console.error("AI error:", err);
+    // 3️⃣  Ultimate fallback: rough heuristic estimate
+    const heuristic = heuristicEstimate(raw);
+    updateAll(raw, heuristic.calories, heuristic.protein, heuristic.carbs, heuristic.fat, mealType, "AI (heuristic)", note);
+    showToast(`Used rough estimate for "${raw}" (${heuristic.calories} kcal)`, "info");
+    foodInput.value = "";
+    noteFood.value = "";
+    suggestionsBox.innerHTML = "";
+  }
+}
+
+// Free AI call via Hugging Face Inference API (no key required for small models)
+async function callFreeAI(prompt) {
+  // Use HF free inference endpoint (Mistral-7B)
+  const HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.3";
+  const url = `https://api-inference.huggingface.co/models/${HF_MODEL}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      inputs: `<s>[INST] ${prompt} [/INST]`,
+      parameters: { max_new_tokens: 150, temperature: 0.1 }
+    })
+  });
+
+  if (!response.ok) throw new Error(`HF API error: ${response.status}`);
+
+  const result = await response.json();
+  const text = result[0]?.generated_text || "";
+
+  // Extract JSON from the response
+  const jsonMatch = text.match(/\{[\s\S]*?"calories"\s*:\s*\d[\s\S]*?\}/);
+  if (jsonMatch) {
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      calories: Math.round(Number(parsed.calories) || 0),
+      protein:  Math.round(Number(parsed.protein)  || 0),
+      carbs:    Math.round(Number(parsed.carbs)     || 0),
+      fat:      Math.round(Number(parsed.fat)       || 0)
+    };
+  }
+  return null;
+}
+
+// Fuzzy match against local food database
+function fuzzyMatchFood(input) {
+  const key = input.toLowerCase().replace(/\s+/g, "_");
+
+  // Exact match
+  if (foodData[key]) return key;
+
+  // Partial / fuzzy match
+  const keys = Object.keys(foodData);
+  let bestMatch = null;
+  let bestScore = 0;
+
+  for (const k of keys) {
+    const score = similarityScore(key, k);
+    if (score > bestScore && score > 0.5) {
+      bestScore = score;
+      bestMatch = k;
+    }
+  }
+  return bestMatch;
+}
+
+// Simple similarity scoring (Dice coefficient on bigrams)
+function similarityScore(a, b) {
+  if (a === b) return 1;
+  if (a.length < 2 || b.length < 2) return 0;
+
+  const bigramsA = new Set();
+  for (let i = 0; i < a.length - 1; i++) bigramsA.add(a.slice(i, i + 2));
+
+  let matches = 0;
+  for (let i = 0; i < b.length - 1; i++) {
+    if (bigramsA.has(b.slice(i, i + 2))) matches++;
+  }
+
+  return (2 * matches) / (a.length - 1 + b.length - 1);
+}
+
+// Heuristic fallback when both local match and API fail
+function heuristicEstimate(foodName) {
+  const name = foodName.toLowerCase();
+
+  // Category-based rough estimates
+  const categories = [
+    { keywords: ["rice", "pulao", "biryani", "khichdi"], cal: 300, p: 8, c: 50, f: 8 },
+    { keywords: ["roti", "chapati", "naan", "paratha", "bread", "toast"], cal: 180, p: 5, c: 28, f: 5 },
+    { keywords: ["dal", "lentil", "rajma", "chole", "sambar"], cal: 200, p: 10, c: 30, f: 5 },
+    { keywords: ["chicken", "mutton", "fish", "egg", "meat", "keema"], cal: 300, p: 25, c: 5, f: 18 },
+    { keywords: ["paneer", "cheese", "tofu"], cal: 320, p: 14, c: 10, f: 22 },
+    { keywords: ["sabzi", "vegetable", "bhaji", "palak", "gobi", "aloo"], cal: 160, p: 4, c: 20, f: 7 },
+    { keywords: ["sweet", "halwa", "ladoo", "gulab", "jalebi", "kheer", "barfi"], cal: 250, p: 4, c: 38, f: 10 },
+    { keywords: ["samosa", "pakora", "bhajiya", "fry", "fried"], cal: 250, p: 5, c: 28, f: 14 },
+    { keywords: ["dosa", "idli", "uttapam", "vada"], cal: 150, p: 4, c: 22, f: 5 },
+    { keywords: ["fruit", "apple", "banana", "mango", "orange"], cal: 90, p: 1, c: 22, f: 0 },
+    { keywords: ["milk", "lassi", "chai", "tea", "coffee"], cal: 120, p: 4, c: 15, f: 4 },
+    { keywords: ["juice", "smoothie", "shake"], cal: 180, p: 3, c: 35, f: 2 },
+  ];
+
+  for (const cat of categories) {
+    if (cat.keywords.some(kw => name.includes(kw))) {
+      return { calories: cat.cal, protein: cat.p, carbs: cat.c, fat: cat.f };
+    }
+  }
+
+  // Generic Indian meal fallback
+  return { calories: 250, protein: 8, carbs: 30, fat: 10 };
 }
 
 window.onload = load;

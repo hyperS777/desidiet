@@ -1,105 +1,283 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-  <title>DesiDiet AI</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DesiDiet AI — Smart Indian meal nutrition tracker with AI-powered food estimation. Track calories, protein, carbs and fat for every meal.">
+  <title>DesiDiet AI — Indian Meal Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<h1 style="font-size: 40px; margin-bottom: 0px; ">DesiDiet AI</h1>
-<p style="font-size: 20px; margin-top: 0px; margin-bottom: 6px; ">Indian Meal Diet Tracker</p>
-<p style="font-size: 16px; margin-top: 0px;">Tracks your everyday meals</p>
+  <!-- Animated background blobs -->
+  <div class="bg-blob blob-1"></div>
+  <div class="bg-blob blob-2"></div>
+  <div class="bg-blob blob-3"></div>
 
-<div class="container">
+  <div id="toast-container" class="toast-container"></div>
 
-  <div class="card">
-    <h2>Add Meal</h2>
+  <header>
+    <div class="header-content">
+      <div class="logo-group">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+            <path d="M8 12c0-2.2 1.8-4 4-4"/>
+            <circle cx="12" cy="12" r="1.5"/>
+          </svg>
+        </div>
+        <div>
+          <h1>DesiDiet <span class="ai-badge">AI</span></h1>
+          <p class="tagline">Smart Indian Meal Tracker</p>
+        </div>
+      </div>
+      <div class="header-stats">
+        <div class="header-stat">
+          <span class="header-stat-value" id="hCalories">0</span>
+          <span class="header-stat-label">kcal today</span>
+        </div>
+        <div class="header-stat">
+          <span class="header-stat-value" id="hMeals">0</span>
+          <span class="header-stat-label">meals logged</span>
+        </div>
+      </div>
+    </div>
+  </header>
 
-    <div class="input-wrapper">
-      <input
-        id="foodInput"
-        placeholder="Enter food name"
-        oninput="showSuggestions()"
-        autocomplete="off"
-      />
-      <div id="suggestionsBox"></div>
+  <div class="container">
+
+    <!-- LEFT COLUMN -->
+    <div class="col-left">
+
+      <!-- Add Meal Card -->
+      <div class="card card-glow" id="addMealCard">
+        <div class="card-header">
+          <div class="card-icon icon-orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <h2>Add Meal</h2>
+        </div>
+
+        <div class="input-wrapper">
+          <input id="foodInput" placeholder="Search food… e.g. biryani, dosa" oninput="showSuggestions()" autocomplete="off" />
+          <div class="input-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          </div>
+          <div id="suggestionsBox"></div>
+        </div>
+
+        <select id="mealTypeFood">
+          <option>Breakfast</option>
+          <option>Lunch</option>
+          <option>Dinner</option>
+          <option>Snack</option>
+        </select>
+
+        <input id="noteFood" placeholder="Add a note (optional)">
+
+        <div class="btn-row">
+          <button onclick="addMeal()" class="btn-primary" id="addFromListBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Add
+          </button>
+          <button onclick="estimateWithAI()" class="btn-ai" id="estimateAIBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 014 4c0 1.1-.45 2.1-1.17 2.83L12 12l-2.83-3.17A4 4 0 0112 2z"/><path d="M8 14h8M9 18h6"/></svg>
+            AI Estimate
+          </button>
+        </div>
+      </div>
+
+      <!-- Manual Entry Card -->
+      <div class="card" id="manualEntryCard">
+        <div class="card-header">
+          <div class="card-icon icon-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4v14a2 2 0 002 2h12a2 2 0 002-2v-5"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+          <h2>Manual Entry</h2>
+        </div>
+
+        <div class="grid-2x2">
+          <div class="input-labeled">
+            <label>Calories</label>
+            <input id="mCalories" type="number" placeholder="0">
+          </div>
+          <div class="input-labeled">
+            <label>Protein (g)</label>
+            <input id="mProtein" type="number" placeholder="0">
+          </div>
+          <div class="input-labeled">
+            <label>Carbs (g)</label>
+            <input id="mCarbs" type="number" placeholder="0">
+          </div>
+          <div class="input-labeled">
+            <label>Fat (g)</label>
+            <input id="mFat" type="number" placeholder="0">
+          </div>
+        </div>
+
+        <select id="mealTypeManual">
+          <option>Breakfast</option>
+          <option>Lunch</option>
+          <option>Dinner</option>
+          <option>Snack</option>
+        </select>
+
+        <input id="noteManual" placeholder="Add a note (optional)">
+
+        <button onclick="addManualMeal()" class="btn-primary" id="addManualBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Add Manual Meal
+        </button>
+      </div>
     </div>
 
-    <select id="mealTypeFood">
-      <option>Breakfast</option>
-      <option>Lunch</option>
-      <option>Dinner</option>
-      <option>Snack</option>
-    </select>
+    <!-- MIDDLE COLUMN -->
+    <div class="col-mid">
 
-    <input id="noteFood" placeholder="Optional note">
+      <!-- Daily Goal Card -->
+      <div class="card" id="goalCard">
+        <div class="card-header">
+          <div class="card-icon icon-green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <h2>Daily Goal</h2>
+        </div>
 
-    <button onclick="addMeal()">Add from List</button>
-    <button onclick="estimateWithAI()">Estimate with AI</button>
+        <div class="goal-row">
+          <input id="goalInput" type="number" placeholder="e.g. 2000 kcal">
+          <button onclick="setGoal()" class="btn-small" id="setGoalBtn">Set</button>
+        </div>
+
+        <div class="goal-display">
+          <p id="goalText">No goal set</p>
+          <div class="progress-bar">
+            <div id="progressFill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nutrition Totals Card -->
+      <div class="card" id="totalsCard">
+        <div class="card-header">
+          <div class="card-icon icon-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          </div>
+          <h2>Today's Nutrition</h2>
+        </div>
+
+        <div class="macro-grid">
+          <div class="macro-card macro-cal">
+            <span class="macro-value" id="tCalories">0</span>
+            <span class="macro-label">Calories</span>
+            <div class="macro-bar"><div class="macro-fill fill-cal" id="fillCal"></div></div>
+          </div>
+          <div class="macro-card macro-pro">
+            <span class="macro-value" id="tProtein">0</span>
+            <span class="macro-label">Protein (g)</span>
+            <div class="macro-bar"><div class="macro-fill fill-pro" id="fillPro"></div></div>
+          </div>
+          <div class="macro-card macro-carb">
+            <span class="macro-value" id="tCarbs">0</span>
+            <span class="macro-label">Carbs (g)</span>
+            <div class="macro-bar"><div class="macro-fill fill-carb" id="fillCarb"></div></div>
+          </div>
+          <div class="macro-card macro-fat">
+            <span class="macro-value" id="tFat">0</span>
+            <span class="macro-label">Fat (g)</span>
+            <div class="macro-bar"><div class="macro-fill fill-fat" id="fillFat"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Meal Breakdown -->
+      <div class="card" id="mealBreakdownCard">
+        <div class="card-header">
+          <div class="card-icon icon-orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </div>
+          <h2>Meal Breakdown</h2>
+        </div>
+
+        <div class="meal-breakdown-grid">
+          <div class="meal-tile tile-breakfast">
+            <span class="tile-emoji">🌅</span>
+            <span class="tile-name">Breakfast</span>
+            <span class="tile-cal"><span id="sBreakfast">0</span> kcal</span>
+            <span class="tile-pro"><span id="pBreakfast">0</span>g protein</span>
+          </div>
+          <div class="meal-tile tile-lunch">
+            <span class="tile-emoji">☀️</span>
+            <span class="tile-name">Lunch</span>
+            <span class="tile-cal"><span id="sLunch">0</span> kcal</span>
+            <span class="tile-pro"><span id="pLunch">0</span>g protein</span>
+          </div>
+          <div class="meal-tile tile-dinner">
+            <span class="tile-emoji">🌙</span>
+            <span class="tile-name">Dinner</span>
+            <span class="tile-cal"><span id="sDinner">0</span> kcal</span>
+            <span class="tile-pro"><span id="pDinner">0</span>g protein</span>
+          </div>
+          <div class="meal-tile tile-snack">
+            <span class="tile-emoji">🍿</span>
+            <span class="tile-name">Snack</span>
+            <span class="tile-cal"><span id="sSnack">0</span> kcal</span>
+            <span class="tile-pro"><span id="pSnack">0</span>g protein</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="col-right">
+      <div class="card card-history" id="historyCard">
+        <div class="card-header">
+          <div class="card-icon icon-teal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+          </div>
+          <h2>History</h2>
+        </div>
+
+        <div class="filters" id="filterButtons">
+          <button class="active" onclick="filterHistory('All', this)">All</button>
+          <button onclick="filterHistory('Breakfast', this)">🌅 Breakfast</button>
+          <button onclick="filterHistory('Lunch', this)">☀️ Lunch</button>
+          <button onclick="filterHistory('Dinner', this)">🌙 Dinner</button>
+          <button onclick="filterHistory('Snack', this)">🍿 Snack</button>
+        </div>
+
+        <ul id="historyList"></ul>
+
+        <div class="empty-state" id="emptyState">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+          <p>No meals logged yet</p>
+          <span>Add your first meal above to get started</span>
+        </div>
+
+        <div class="history-actions">
+          <button class="btn-danger" onclick="clearHistory()" id="clearHistoryBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2M19 6v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
+            Clear All
+          </button>
+          <button class="btn-secondary" onclick="exportHistory()" id="exportCSVBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <div class="card">
-    <h2>Manual Entry</h2>
+  <footer>
+    <p>DesiDiet AI — Track your Indian meals with intelligence ✨</p>
+  </footer>
 
-    <div class="grid">
-      <input id="mCalories" type="number" placeholder="Calories">
-      <input id="mProtein" type="number" placeholder="Protein (g)">
-      <input id="mCarbs" type="number" placeholder="Carbs (g)">
-      <input id="mFat" type="number" placeholder="Fat (g)">
-    </div>
-
-    <select id="mealTypeManual">
-      <option>Breakfast</option>
-      <option>Lunch</option>
-      <option>Dinner</option>
-      <option>Snack</option>
-    </select>
-
-    <input id="noteManual" placeholder="Optional note">
-
-    <button onclick="addManualMeal()">Add Manual Meal</button>
-  </div>
-
-  <div class="card">
-    <h2>Daily Goal</h2>
-    <input id="goalInput" type="number" placeholder="Calories goal">
-    <button onclick="setGoal()">Set Goal</button>
-    <p id="goalText">No goal set</p>
-
-    <div class="progress-bar">
-      <div id="progressFill"></div>
-    </div>
-
-    <h2>Totals</h2>
-    <p>Calories: <span id="tCalories">0</span></p>
-    <p>Protein: <span id="tProtein">0</span> g</p>
-    <p>Carbs: <span id="tCarbs">0</span> g</p>
-    <p>Fat: <span id="tFat">0</span> g</p>
-
-    <h3>Meal Stats</h3>
-    <p>Breakfast: <span id="sBreakfast">0</span> kcal | <span id="pBreakfast">0</span> g protein</p>
-    <p>Lunch: <span id="sLunch">0</span> kcal | <span id="pLunch">0</span> g protein</p>
-    <p>Dinner: <span id="sDinner">0</span> kcal | <span id="pDinner">0</span> g protein</p>
-    <p>Snack: <span id="sSnack">0</span> kcal | <span id="pSnack">0</span> g protein</p>
-
-    <h3>History</h3>
-
-    <div class="filters">
-      <button onclick="filterHistory('All')">All</button>
-      <button onclick="filterHistory('Breakfast')">Breakfast</button>
-      <button onclick="filterHistory('Lunch')">Lunch</button>
-      <button onclick="filterHistory('Dinner')">Dinner</button>
-      <button onclick="filterHistory('Snack')">Snack</button>
-    </div>
-
-    <ul id="historyList"></ul>
-
-    <button onclick="clearHistory()">Clear</button>
-    <button onclick="exportHistory()">Export CSV</button>
-  </div>
-
-</div>
-
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
+
 </html>
